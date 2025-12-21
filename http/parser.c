@@ -4,7 +4,7 @@
 #include "../network/connection.h"
 #include "./parser.h"
 
-int parse_buf(req_buf_t *buf)
+int parse_req(req_buf_t *buf)
 {
     char *header_end = strstr(buf->data, HEADER_END);
     if(header_end == NULL){

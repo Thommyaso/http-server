@@ -68,49 +68,6 @@ lis_sock_fd server_listen()
 
     return sock_fd;
 
-    // socklen_t client_addr_size;
-    // struct sockaddr_storage client_addr;
-    // client_addr_size = sizeof client_addr;
-    // int conn_fd = accept(lis_sock_fd, (struct sockaddr *)&client_addr, &client_addr_size);
-    //
-    // t_buf req_buf = {
-    //     .t_size = 2000,
-    // };
-    //
-    // req_buf.mem = malloc(req_buf.t_size * sizeof(*req_buf.mem));
-    // if(req_buf.mem == NULL){
-    //     // THIS WILL GET BETTER DW
-    //     return EXIT_FAILURE;
-    // }
-    //
-    // ssize_t bytes_received = recv(conn_fd, req_buf.mem, req_buf.t_size, 0);
-    // req_buf.mem[bytes_received] = '\0';
-
-    // char *eoh = strstr(buf, "\r\n\r\n");
-    // printf("%s\n", buf);
-
-//     int body_len = 90;
-//     if(eoh != NULL){
-//         printf("headers received!\n");
-//         char path[100]; 
-//         int tot_len = strstr(buf+4, " ") - (buf+4);
-//         printf("%d total length: \n", tot_len);
-//         strncpy(path, buf+4, tot_len);
-//         path[tot_len] = '\0';
-//
-//         printf("requested path: %s\n", path);
-//
-//         char *res = "HTTP/1.1 200\n\
-// Content-Type: text/html\n\
-// Content-Length: 92\n\
-// Location: http://localhost/8080\n\
-// \r\n\r\n\
-// <!DOCTYPE html><head><title>fuck</title></head><body><h1>hello fuckface</h1></body></html>";
-//         send(conn_fd, res, strlen(res), 0);
-//     }
-
-    // printf("bytes received%zd\n",bytes_received);
-
     freeaddrinfo(servinfo);
     return EXIT_SUCCESS;
 }
