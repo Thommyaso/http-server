@@ -1,4 +1,8 @@
+#ifndef __PARSER__
+#define __PARSER__
+
 #include "../network/connection.h"
+#include "../utils/buff.h"
 
 #define HEADER_END "\r\n\r\n"
 #define REQ_NOT_COMPLETE 1
@@ -26,4 +30,6 @@ typedef struct {
     char *storage;
 } req_headers_t;
 
-int parse_req(req_buf_t *buf);
+int parse_req(buff_t *buf);
+
+#endif

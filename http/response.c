@@ -3,12 +3,14 @@
 #include <string.h>
 #include "../utils/buff.h"
 
-int build_success_res(buff_t *resource)
+int build_success_res(buff_t *res_buff)
 {
     char header[200]; 
-    int content_size = strlen(resource->data); // at this stage the only thing in respose buffer is the content, so das ist gut
+
+    // at this stage the only thing in respose buffer is the content, so das ist gut
+    int content_size = strlen(res_buff->data);
     snprintf(header, sizeof header, RESPONSE_FMT, content_size);
 
-    int result = buff_prepend(resource, header);
+    int result = buff_prepend(res_buff, header);
     return result;
 }

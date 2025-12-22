@@ -3,8 +3,9 @@
 #include <string.h>
 #include "../network/connection.h"
 #include "./parser.h"
+#include "../utils/buff.h"
 
-int parse_req(req_buf_t *buf)
+int parse_req(buff_t *buf)
 {
     char *header_end = strstr(buf->data, HEADER_END);
     if(header_end == NULL){

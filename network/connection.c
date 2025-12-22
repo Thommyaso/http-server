@@ -13,36 +13,38 @@
 
 int server_run(sock_fd_t lis_sock_fd)
 {
+    int result;
     struct sockaddr_storage client_addr;
     socklen_t client_addr_size = sizeof(client_addr);
-
     sock_fd_t conn_sock_fd = accept(lis_sock_fd, (struct sockaddr *)&client_addr, &client_addr_size);
 
-    req_buf_t req_buf = {
-        .capacity = 2000,
-        .used = 0,
-    };
-    req_buf.data = malloc(req_buf.capacity * sizeof(*req_buf.data));
-
-    if(req_buf.data == NULL){
-        return EXIT_FAILURE;
-    }
+    buff_t req_buff;
+    result = init_buff(&req_buff, 0);
 
     // this will be in a loop
-    int recv_size = recv(conn_sock_fd, req_buf.data, req_buf.capacity, 0);
-    req_buf.used = recv_size;
+    if(req_buff.size - req_buff.used <= 0) {
+        buff_increase(&req_buff, BUFF_SIZE);
+    }
+    int recv_size = recv(conn_sock_fd, req_buff.data + req_buff.used, req_buff.size - req_buff.used, 0);
+    req_buff.used = recv_size;
     
-    int req = parse_req(&req_buf);
+    int req = parse_req(&req_buff);
     if(req != REQ_COMPLETE){
     }
     //
    
     buff_t res_buff;
-    int result = get_resource(&res_buff);
+    result = init_buff(&res_buff, 0);
+    if(result != 0){
+        // oh no malloc failed!
+        return result;
+    }
+
+    result = get_resource(&res_buff);
     result = build_success_res(&res_buff);
 
     // this needs to loop (in case all data wasn't sent)
-    send(conn_sock_fd,res_buff.data, strlen(res_buff.data), 0);
+    send(conn_sock_fd, res_buff.data, res_buff.used, 0);
     // shutdown(conn_sock_fd, SHUT_RDWR); 
 
     printf("%s\n", res_buff.data);
