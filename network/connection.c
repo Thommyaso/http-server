@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 
 #include "./listener.h"
@@ -7,6 +8,7 @@
 #include "../http/parser.h"
 #include "../router/router.h"
 #include "../http/response.h"
+#include "../utils/buff.h"
 
 
 int server_run(sock_fd_t lis_sock_fd)
@@ -35,13 +37,14 @@ int server_run(sock_fd_t lis_sock_fd)
     }
     //
    
-    resource_t *resource;
-    int resource_read = get_resource(req_buf, &resource);
-    build_success_res(resource);
+    buff_t res_buff;
+    int result = get_resource(&res_buff);
+    result = build_success_res(&res_buff);
 
-    send(conn_sock_fd,resource->data, resource->t_size,0);
+    // this needs to loop (in case all data wasn't sent)
+    send(conn_sock_fd,res_buff.data, strlen(res_buff.data), 0);
     // shutdown(conn_sock_fd, SHUT_RDWR); 
 
-    printf("%s\n", resource->data);
+    printf("%s\n", res_buff.data);
     return EXIT_SUCCESS;
 }

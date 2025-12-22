@@ -4,34 +4,30 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include "../utils/buff.h"
 
-int get_resource(req_buf_t req_buf, resource_t **presource){
+int get_resource(buff_t *buff)
+{
     char filepath[100];
     sprintf(filepath, "%s/index.html", ROOT);
 
     struct stat st;
     stat(filepath, &st);
-    size_t size = st.st_size;
+    size_t filesize = st.st_size;
 
-    resource_t resource = {
-        .t_size = size,
-    };
-
-    resource.data = malloc(size);
-
-    if(resource.data == NULL){
-        // oh no, what now? ram so expensive!
-        return RESOURCE_READ_FAILURE;
+    int buf_result = init_buff(buff, filesize);
+    if(buf_result != 0){
+        // oh no malloc failed!
+        return buf_result;
     }
 
     FILE *fp = fopen(filepath, "rb");
-    size_t result = fread(resource.data, 1, resource.t_size, fp);
-    resource.data[result] = '\0';
+    size_t fread_result = fread(buff->data , 1, buff->size, fp);
+    buff->data[fread_result] = '\0';
 
-    if(size == result){
-        *presource = &resource;
-        return RESOURCE_READ_SUCCES;
+    if(filesize == fread_result){
+        return 0;
     }
 
-    return RESOURCE_READ_FAILURE;
+    return 1;
 }

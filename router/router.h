@@ -1,6 +1,7 @@
 #ifndef ROUTER_H
 #define ROUTER_H
 
+#include "../utils/buff.h"
 #include "../network/connection.h"
 
 #define ROOT "/home/thomas/Repositories/hw"
@@ -14,5 +15,5 @@ typedef struct {
     char *data;
 } resource_t;
 
-int get_resource(req_buf_t req_buf, resource_t **resource);
+int get_resource(buff_t *presource);
 #endif
