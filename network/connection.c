@@ -26,9 +26,11 @@ int server_run(sock_fd_t lis_sock_fd)
         buff_increase(&req_buff, BUFF_SIZE);
     }
     int recv_size = recv(conn_sock_fd, req_buff.data + req_buff.used, req_buff.size - req_buff.used, 0);
-    req_buff.used = recv_size;
-    
-    int req = parse_req(&req_buff);
+    req_buff.used += recv_size;
+    req_buff.data[req_buff.used] = '\0';
+
+    headers_map_t headers_map = {0};
+    int req = parse_req(&req_buff, &headers_map);
     if(req != REQ_COMPLETE){
     }
     //
