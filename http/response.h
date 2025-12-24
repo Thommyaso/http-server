@@ -1,9 +1,14 @@
+#ifndef __RESPONSE__
+#define __RESPONSE__
+
 #include "../router/router.h"
 #include "../utils/buff.h"
+#include "parser.h"
 
 #define RESPONSE_FMT \
-"HTTP/1.1 200 OK\r\n"\
-"Content-Length: %d\r\n"\
+"HTTP/1.1 %d DO NOT CARE\r\n"\
+"Content-Length: %zu\r\n"\
 "\r\n"
 
-int build_success_res(buff_t *resource);
+int build_response(headers_map_t *headers_map, buff_t *res_buff);
+#endif

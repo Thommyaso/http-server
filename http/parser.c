@@ -24,7 +24,7 @@ char *parse_line_section(char *cursor_pos, headers_map_t *status_line)
     int idx;
 
     char *line_end = strstr(cursor_pos, LINE_END);
-    if(!line_end) return NULL;
+    if(!line_end) return NULL; // if line end not found, means header are malformed
     *line_end = '\0';
 
     for(idx = 0; cursor_pos < line_end; idx++){
@@ -49,12 +49,13 @@ char *parse_line_section(char *cursor_pos, headers_map_t *status_line)
     }
 
     if(idx != 3){
-        // line section should have 3 elements, method, url and http, If it doesnt, it means headers are malformed
+        // line section should have 3 elements, method, url and http version,
+        // If it doesnt, it means headers are malformed
         // return unsuccessfull response
         return NULL;
     }
 
-    //every line in http ends with "\r\n\r\n" so once i find it i move 2 postions right to get next line
+    //every line in http ends with "\r\n" so once i find it i move 2 postions right to find start of headers
     return line_end + 2;
 }
 
@@ -83,10 +84,11 @@ int parse_headers_section(buff_t *buff, char *cursor_pos, headers_map_t *header_
         header_map->headers[line].label = cursor_pos;
 
         cursor_pos = label_end + 1;
-        // truncating any header space at the start of the value
         while (*cursor_pos == ' ' || *cursor_pos == '\t') cursor_pos++;
 
         header_map->headers[line].value = cursor_pos;
+
+        //every line in http ends with "\r\n" so once i find it i move 2 postions right to get next line
         cursor_pos = line_end + 2;
     }
 

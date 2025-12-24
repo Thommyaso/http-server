@@ -1,22 +1,50 @@
-#include "./router.h"
-#include "../http/parser.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 
+#include "router.h"
+#include "../http/parser.h"
 #include "../utils/buff.h"
 
-int get_resource(buff_t *buff)
+/*
+ * Simple resource retrival, if url is a directory it looks for index.html in that dir,
+ * otherwise it looks for the file reqested
+ * updates buffer -- at this point buffer is only meant to contain this filecontent so content-length
+ * can be derived from used buffer size
+ *
+ * Returns resonse code
+ */
+res_code_t get_resource(buff_t *buff, headers_map_t *headers_map)
 {
-    int result;
-    char filepath[100];
-    sprintf(filepath, "%s/index.html", ROOT);
+    char filepath[MAX_FILEPATH] = ROOT;
+    int result = combine_filepath(filepath, headers_map->url, MAX_FILEPATH);
+
+    // this must be an internal error, send 500 error;
+    if(result) return RESPONSE_500;
 
     struct stat st;
-    stat(filepath, &st);
-    size_t filesize = st.st_size;
+    // stat failed, send failed response (probably 5XX an internal server error);
+    if(stat(filepath, &st) != 0) return RESPONSE_500;
 
+    if (S_ISDIR(st.st_mode)) {
+        remove_trailing_slash(filepath);
+        result = combine_filepath(filepath, "/index.html", MAX_FILEPATH);
+
+        // this must be an internal error, send 500 error;
+        if(result) return RESPONSE_500;
+
+        // stat failed, send failed response (probably 5XX an internal server error);
+        if(stat(filepath, &st) != 0) return RESPONSE_500;
+
+    } else if (!S_ISREG(st.st_mode)) {
+        // its not a regular file nor directory, send 404 not found
+        return RESPONSE_404;
+    } else {
+        // all good it is a file, nothing needs adding or changing
+    }
+
+    size_t filesize = st.st_size;
     result =  buff_increase(buff, filesize);
 
     FILE *fp = fopen(filepath, "rb");
@@ -25,8 +53,35 @@ int get_resource(buff_t *buff)
     buff->used += fread_result;
 
     if(filesize == fread_result){
-        return 0;
+        return RESPONSE_200;
     }
 
-    return 1;
+    // filesize didn't match file found, something's off - server fault
+    return RESPONSE_500;
+}
+
+/*
+ * This is a sanity check -- I didn't want to mess around setting runtime memory for filepath
+ * Filepath has to be the combination of ROOT and whatever was received in http request
+ * I have allocated max_len size for filepath.
+ * It is unlikely but buffer could overflow
+ * This function checks before combining filepaths together
+ */
+int combine_filepath(char *dest, char *src, int max_len)
+{
+    if(strlen(dest) + strlen(src) >= max_len) return 1;
+    strcat(dest, src);
+    return 0;
+}
+
+/*
+* Helper function to remove trailing forward slash if it exists
+* If it doesn't exist nothing happens
+* This ensures we can safely append file to the directory path
+*/
+void remove_trailing_slash(char *filepath)
+{
+    int end_idx = strlen(filepath) - 1;
+    if(filepath[end_idx] != '/') return;
+    filepath[end_idx] = '\0';
 }
