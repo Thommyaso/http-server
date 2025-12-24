@@ -5,7 +5,7 @@
 #include "../network/connection.h"
 #include "../http/parser.h"
 
-#define ROOT "/home/thomas/Repositories/www/lillicrap/public"
+#define ROOT_DIR "/home/thomas/Repositories/www/lillicrap/public"
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 

@@ -17,35 +17,30 @@
  */
 res_code_t get_resource(buff_t *buff, headers_map_t *headers_map)
 {
-    char filepath[MAX_FILEPATH] = ROOT;
-    int result = combine_filepath(filepath, headers_map->url, MAX_FILEPATH);
+    char filepath[MAX_FILEPATH] = ROOT_DIR;
 
-    // this must be an internal error, send 500 error;
-    if(result) return RESPONSE_500;
+    int failed = combine_filepath(filepath, headers_map->url, MAX_FILEPATH);
+    if(failed) return RESPONSE_500;
 
     struct stat st;
-    // stat failed, send failed response (probably 5XX an internal server error);
     if(stat(filepath, &st) != 0) return RESPONSE_500;
 
     if (S_ISDIR(st.st_mode)) {
         remove_trailing_slash(filepath);
-        result = combine_filepath(filepath, "/index.html", MAX_FILEPATH);
 
-        // this must be an internal error, send 500 error;
-        if(result) return RESPONSE_500;
+        failed = combine_filepath(filepath, "/index.html", MAX_FILEPATH);
+        if(failed) return RESPONSE_500;
 
-        // stat failed, send failed response (probably 5XX an internal server error);
         if(stat(filepath, &st) != 0) return RESPONSE_500;
 
     } else if (!S_ISREG(st.st_mode)) {
-        // its not a regular file nor directory, send 404 not found
+        // not a regular file or directory = bad request
         return RESPONSE_404;
-    } else {
-        // all good it is a file, nothing needs adding or changing
     }
 
     size_t filesize = st.st_size;
-    result =  buff_increase(buff, filesize);
+    failed =  buff_increase(buff, filesize);
+    if(failed) return RESPONSE_500;
 
     FILE *fp = fopen(filepath, "rb");
     size_t fread_result = fread(buff->data + buff->used, 1, buff->size, fp);
@@ -56,13 +51,12 @@ res_code_t get_resource(buff_t *buff, headers_map_t *headers_map)
         return RESPONSE_200;
     }
 
-    // filesize didn't match file found, something's off - server fault
     return RESPONSE_500;
 }
 
 /*
  * This is a sanity check -- I didn't want to mess around setting runtime memory for filepath
- * Filepath has to be the combination of ROOT and whatever was received in http request
+ * Filepath has to be the combination of ROOT_DIR and whatever was received in http request
  * I have allocated max_len size for filepath.
  * It is unlikely but buffer could overflow
  * This function checks before combining filepaths together
