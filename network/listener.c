@@ -56,7 +56,7 @@ lis_sock_fd server_listen()
         }
 
         inet_ntop(p->ai_family,addr, ipstr, sizeof ipstr);
-        printf("this is ip: %s, ip version: %s\n", ipstr, ipver);
+        // printf("this is ip: %s, ip version: %s\n", ipstr, ipver);
     }
 
     lis_sock_fd sock_fd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);

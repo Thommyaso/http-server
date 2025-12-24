@@ -40,7 +40,9 @@ int server_run(sock_fd_t lis_sock_fd)
 
     // this needs to loop (in case all data wasn't sent)
     send(conn_sock_fd, res_buff.data, res_buff.used, 0);
-    // shutdown(conn_sock_fd, SHUT_RDWR); 
+    shutdown(conn_sock_fd, SHUT_RDWR); 
+    kill_buff(&req_buff);
+    kill_buff(&res_buff);
 
     return EXIT_SUCCESS;
 }
