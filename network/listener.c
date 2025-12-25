@@ -86,7 +86,7 @@ child_callback *Signal(int sigtype, child_callback *func)
     sigemptyset(&act.sa_mask);
         
     if(sigaction(sigtype, &act, &oact) < 0){
-        exit(EXIT_FAILURE);
+        exit(SIG_ERR);
     };
 
     return oact.sa_handler;
