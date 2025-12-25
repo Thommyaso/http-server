@@ -10,6 +10,15 @@ typedef struct {
 
 typedef int sock_fd_t; // just there to make it clear what the int is
 
+typedef void child_callback(int pid);
+
+// AF stands for address family
+// PF stands for protocol family
+
 sock_fd_t server_listen();
+
+void reap_zombies(int pid);
+
+child_callback *Signal(int sigtype, child_callback *func);
 
 #endif

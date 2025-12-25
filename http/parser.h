@@ -20,27 +20,6 @@
 
 #define HEADER_LIMIT 50
 
-/**
- * Parsed request headers.
- *
- * @var prot:
- * Non-owning, null-terminated protocol string.
- * Points into storage.
- *
- * @var url:
- * Non-owning, null-terminated URL string.
- * Points into storage.
- *
- * @var storage:
- * Owning heap allocation backing all fields.
- * Must be freed.
- */
-typedef struct {
-    char *prot;
-    char *url;
-    char *storage;
-} req_headers_t;
-
 typedef struct {
     char *label;
     char *value;

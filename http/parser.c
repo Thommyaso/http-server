@@ -27,7 +27,7 @@ char *parse_line_section(char *cursor_pos, headers_map_t *status_line)
     if(!line_end) return NULL; // if line end not found, means header are malformed
     *line_end = '\0';
 
-    for(idx = 0; cursor_pos < line_end; idx++){
+    for(idx = 0; cursor_pos < line_end && idx < 3; idx++){
         char *section_end = strchr(cursor_pos, STATUS_LINE_DELIMITER);
 
         if(!section_end) section_end = line_end; // last value in status line

@@ -1,4 +1,6 @@
 #include <asm-generic/socket.h>
+#include <errno.h>
+#include <sys/wait.h>
 #include <inttypes.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -8,20 +10,10 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <signal.h>
+#include "listener.h"
 
-#define BACKLOG 25     // how many pending connections queue holds
-
-typedef struct {
-    int t_size;
-    char *mem;
-} t_buf;
-
-typedef int lis_sock_fd;
-
-// AF stands for address family
-// PF stands for protocol family
-
-lis_sock_fd server_listen()
+sock_fd_t server_listen()
 {
     struct addrinfo hints;
     struct addrinfo *servinfo;
@@ -59,12 +51,17 @@ lis_sock_fd server_listen()
         // printf("this is ip: %s, ip version: %s\n", ipstr, ipver);
     }
 
-    lis_sock_fd sock_fd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
+
+    sock_fd_t sock_fd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
+    
+    // a way for me to make sure that socket connection doesn't fail when i restart the program
     int srv_reuse_opt = 1;
     setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &srv_reuse_opt, sizeof(srv_reuse_opt));
+    //
 
     int bind_result = bind(sock_fd, servinfo->ai_addr, servinfo->ai_addrlen);
     int listen_result = listen(sock_fd, BACKLOG);
+    Signal(SIGCHLD, reap_zombies);
 
     return sock_fd;
 
@@ -72,3 +69,25 @@ lis_sock_fd server_listen()
     return EXIT_SUCCESS;
 }
 
+void reap_zombies(int signo)
+{
+    int saved_errno = errno;
+    while (waitpid(-1, NULL, WNOHANG) > 0) 
+        ;
+    errno = saved_errno;
+}
+
+child_callback *Signal(int sigtype, child_callback *func)
+{
+    struct sigaction act, oact;
+
+    act.sa_flags = 0;
+    act.sa_handler = func;
+    sigemptyset(&act.sa_mask);
+        
+    if(sigaction(sigtype, &act, &oact) < 0){
+        exit(EXIT_FAILURE);
+    };
+
+    return oact.sa_handler;
+}
