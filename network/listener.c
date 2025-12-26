@@ -61,7 +61,7 @@ sock_fd_t server_listen()
 
     int bind_result = bind(sock_fd, servinfo->ai_addr, servinfo->ai_addrlen);
     int listen_result = listen(sock_fd, BACKLOG);
-    Signal(SIGCHLD, reap_zombies);
+    // Signal(SIGCHLD, reap_zombies);
 
     return sock_fd;
 
@@ -69,25 +69,25 @@ sock_fd_t server_listen()
     return EXIT_SUCCESS;
 }
 
-void reap_zombies(int signo)
-{
-    int saved_errno = errno;
-    while (waitpid(-1, NULL, WNOHANG) > 0) 
-        ;
-    errno = saved_errno;
-}
+// void reap_zombies(int signo)
+// {
+//     int saved_errno = errno;
+//     while (waitpid(-1, NULL, WNOHANG) > 0) 
+//         ;
+//     errno = saved_errno;
+// }
 
-child_callback *Signal(int sigtype, child_callback *func)
-{
-    struct sigaction act, oact;
-
-    act.sa_flags = 0;
-    act.sa_handler = func;
-    sigemptyset(&act.sa_mask);
-        
-    if(sigaction(sigtype, &act, &oact) < 0){
-        exit(SIG_ERR);
-    };
-
-    return oact.sa_handler;
-}
+// child_callback *Signal(int sigtype, child_callback *func)
+// {
+//     struct sigaction act, oact;
+//
+//     act.sa_flags = 0;
+//     act.sa_handler = func;
+//     sigemptyset(&act.sa_mask);
+//
+//     if(sigaction(sigtype, &act, &oact) < 0){
+//         exit(SIG_ERR);
+//     };
+//
+//     return oact.sa_handler;
+// }
