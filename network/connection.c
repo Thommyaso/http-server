@@ -104,17 +104,15 @@ int server_run(sock_fd_t lis_sock_fd)
         for(int idx = 1; idx < POLL_FD_LIMIT && nready > 0; idx++){
             int fd = poll_fds[idx].fd;
             if(fd < 0){
-                nready--;
                 continue;
             }
 
             if (poll_fds[idx].revents & POLLERR) {
                 printf("error nr:\n", errno);
                 nready--;
-                continue;
             }
 
-            if (poll_fds[idx].revents & (POLLRDNORM)) {
+            if (poll_fds[idx].revents & POLLRDNORM) {
                 nready--;
                 buff_t *req_buff = &poll_requests[idx];
                 buff_t *res_buff = &poll_responses[idx];
@@ -152,7 +150,6 @@ int server_run(sock_fd_t lis_sock_fd)
                 close(fd);
                 poll_fds[idx].fd = -1; // getting rid of the descriptor
             }
-
         }
     }
 
