@@ -8,6 +8,7 @@
 
 #define LIS_FD_IDX 0
 #define POLL_FD_LIMIT 10000
+#define INF_TIM -1
 
 typedef struct {
     size_t capacity;

@@ -16,15 +16,13 @@
 
 int server_run(fd_t lis_fd)
 {
-    int nfdsp1 = lis_fd + 1;
-
     struct pollfd poll_fds[POLL_FD_LIMIT];
-
-    poll_fds[LIS_FD_IDX].fd = lis_fd;
-    poll_fds[LIS_FD_IDX].events = POLLRDNORM;
-
     buff_t poll_requests[POLL_FD_LIMIT];
     buff_t poll_responses[POLL_FD_LIMIT];
+
+    int nfdsp1 = LIS_FD_IDX + 1;
+    poll_fds[LIS_FD_IDX].fd = lis_fd;
+    poll_fds[LIS_FD_IDX].events = POLLRDNORM;
 
     for(int idx = 1; idx < POLL_FD_LIMIT; idx++){
          // -1 indicates available space for accepted fd to be put
@@ -32,7 +30,7 @@ int server_run(fd_t lis_fd)
     }
 
     for(;;){
-        int nready = poll(poll_fds, nfdsp1, -1);
+        int nready = poll(poll_fds, nfdsp1, INF_TIM);
 
         //TODO: gonna have to read those errors and see what to do about them
         if(nready <= 0) continue;
