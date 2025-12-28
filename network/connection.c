@@ -176,7 +176,7 @@ int server_run(sock_fd_t lis_sock_fd)
                     }
 
                     // got full request, time to create response,
-                    // I'm not listening for any more requests on that socket until i process current one
+                    // I'm not listening for any more requests on that socket until i respond to the current one
                     poll_fds[idx].events = POLLOUT;
                     fail = build_response(&headers_map, pres_buff);
 
@@ -190,8 +190,9 @@ int server_run(sock_fd_t lis_sock_fd)
 
             // CLIENT AWAITING RESPONSE
             if (poll_fds[idx].revents & POLLOUT) {
-                char *psend_startpoint = pres_buff->data + pres_buff->processed;
-                int sent_size = send(fd, psend_startpoint, pres_buff->used, 0);
+                char *psend_start= pres_buff->data + pres_buff->processed;
+                int size_to_send = pres_buff->used - pres_buff->processed;   
+                int sent_size = send(fd, psend_start, size_to_send, 0);
 
                 if(sent_size < 0){
                     if(errno != EWOULDBLOCK){
