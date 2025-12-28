@@ -15,8 +15,28 @@ typedef struct {
     char *data;
 } req_buf_t;
 
-int server_run(sock_fd_t lis_sock_fd);
+int server_run(fd_t lis_sock_fd);
 
-void kill_client_connection(sock_fd_t fd, struct pollfd pll_fds[], buff_t *preq_buff, buff_t *pres_buff);
+void kill_client_connection(fd_t fd, struct pollfd pll_fds[], buff_t *preq_buff, buff_t *pres_buff);
+
+void handle_new_connection(
+    fd_t lis_fd,
+    struct pollfd poll_fds[],
+    buff_t poll_requests[],
+    buff_t poll_responses[],
+    int *nfdsp1
+);
+
+void handle_client_request(
+    struct pollfd *ppoll_fd,
+    buff_t *preq_buff,
+    buff_t *pres_buff
+);
+
+void handle_client_response(
+    struct pollfd *ppoll_fd,
+    buff_t *preq_buff,
+    buff_t *pres_buff
+);
 
 #endif

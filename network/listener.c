@@ -13,7 +13,7 @@
 #include <signal.h>
 #include "listener.h"
 
-sock_fd_t server_listen()
+fd_t server_listen()
 {
     struct addrinfo hints;
     struct addrinfo *servinfo;
@@ -51,7 +51,7 @@ sock_fd_t server_listen()
         // printf("this is ip: %s, ip version: %s\n", ipstr, ipver);
     }
 
-    sock_fd_t sock_fd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
+    fd_t sock_fd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
     
     // a way for me to make sure that socket connection doesn't fail when i restart the program
     int srv_reuse_opt = 1;
