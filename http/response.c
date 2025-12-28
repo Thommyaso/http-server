@@ -11,6 +11,10 @@ int build_response(headers_map_t *headers_map, buff_t *res_buff)
 {
     char header[MAX_HEADER] = {0}; 
 
+    // this is important to reset, just in case
+    res_buff->processed = 0;
+    res_buff->used = 0;
+
     // send failed response, we only accept GET requests
     if(strcmp(headers_map->method, "GET") != 0) return 1;
 

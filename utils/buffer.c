@@ -14,6 +14,7 @@ int init_buff(buff_t *buff, size_t new_data)
     }
     buff->size = size;
     buff->used = 0;
+    buff->processed = 0;
 
     return 0;
 }

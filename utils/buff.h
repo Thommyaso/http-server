@@ -9,6 +9,7 @@ typedef struct {
     size_t size;
     size_t used;
     char *data;
+    size_t processed;
 } buff_t;
 
 int init_buff(buff_t *buff, size_t size);
