@@ -1,10 +1,10 @@
-#include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <string.h>
+#include <sys/poll.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#include <poll.h>
 
 #include "./listener.h"
 #include "./connection.h"
@@ -12,64 +12,68 @@
 #include "../http/response.h"
 #include "../utils/buff.h"
 
+#define LIS_FD_IDX 0
+#define POLL_FD_LIMIT 10000
+
 int server_run(sock_fd_t lis_sock_fd)
 {
     int result;
-    int clients[FD_SETSIZE] = {0};
     int nfdsp1 = lis_sock_fd + 1;
-    fd_set local_fd_set, read_fd_set;
-    FD_ZERO(&local_fd_set);
-    FD_SET(lis_sock_fd, &local_fd_set);
 
-    for(int idx = 0; idx < FD_SETSIZE; idx++)
-        clients[idx] = -1; // -1 indicates available space for accepted fd to be put
+    struct pollfd fds[POLL_FD_LIMIT];
+
+    fds[LIS_FD_IDX].fd = lis_sock_fd;
+    fds[LIS_FD_IDX].events = POLLIN;
+
+    for(int idx = 1; idx < POLL_FD_LIMIT; idx++){
+         // -1 indicates available space for accepted fd to be put
+        fds[idx].fd = -1;
+    }
 
     for(;;){
-        read_fd_set = local_fd_set;
-        int nready = select(nfdsp1, &read_fd_set, NULL, NULL, NULL);
+        int nready = poll(fds, nfdsp1,0);
+
         if(nready < 0){
             return EXIT_FAILURE;
         }
 
-        if(FD_ISSET(lis_sock_fd, &read_fd_set)){
+        if (fds[LIS_FD_IDX].revents & POLLIN) {
             sock_fd_t conn_sock_fd = accept(lis_sock_fd, NULL, NULL);
 
             if(conn_sock_fd < 0)
                 continue; // connection socket failed;
 
             int idx;
-            for (idx = 0; idx < FD_SETSIZE; idx++) {
-                if(clients[idx] == -1){
-                    clients[idx] = conn_sock_fd;
+            for (idx = 1; idx < POLL_FD_LIMIT; idx++) {
+                if(fds[idx].fd == -1){
+                    fds[idx].fd = conn_sock_fd;
+                    fds[idx].events = POLLIN | POLLOUT;
+
+                    if(nfdsp1 <= conn_sock_fd){
+                        nfdsp1 = conn_sock_fd + 1;
+                    }
                     break;
                 }
             }
 
-            if(idx < FD_SETSIZE){
-                FD_SET(conn_sock_fd, &local_fd_set);
-
-                if(nfdsp1 <= conn_sock_fd){
-                    nfdsp1 = conn_sock_fd + 1;
-                }
-
-            } else {
-                // max number of file descriptors in reading set has been reached, cant do any more connections till space frees
+            // max number of file descriptors in reading set has been reached, cant do any more connections till space frees
+            if(idx >= POLL_FD_LIMIT){
                 close(conn_sock_fd);
             }
 
-            nready--;
-            if(nready == 0){
-                continue; // the only fd that was ready was the listener with a new connection that needs setting;
+            // if true the only fd that was ready was the listener
+            if(--nready == 0){
+                continue; 
             }
         }
 
-        for(int idx = 0; idx <= FD_SETSIZE; idx++){
-            int descriptor = clients[idx];
+        for(int idx = 1; idx <= POLL_FD_LIMIT; idx++){
+            int descriptor = fds[idx].fd;
             if(descriptor < 0){
                 continue;
             }
 
-            if(FD_ISSET(descriptor, &read_fd_set)){
+            if (fds[idx].revents & POLLIN) {
                 buff_t req_buff = {0};
                 result = init_buff(&req_buff, 0);
 
@@ -100,11 +104,9 @@ int server_run(sock_fd_t lis_sock_fd)
                 kill_buff(&res_buff);
 
                 close(descriptor);
-                FD_CLR(descriptor, &local_fd_set);
-                clients[idx] = -1;
+                fds[idx].fd = -1; // getting rid of the descriptor
 
-                nready--;
-                if(nready <= 0){
+                if(--nready <= 0){
                     break;
                 }
             }
