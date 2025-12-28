@@ -16,9 +16,14 @@ typedef struct {
     char *data;
 } req_buf_t;
 
-int server_run(fd_t lis_sock_fd);
+void server_run(fd_t lis_sock_fd);
 
-void kill_client_connection(fd_t fd, struct pollfd pll_fds[], buff_t *preq_buff, buff_t *pres_buff);
+void kill_client_connection(
+    fd_t fd,
+    struct pollfd pll_fds[],
+    buff_t *preq_buff,
+    buff_t *pres_buff
+);
 
 void handle_new_connection(
     fd_t lis_fd,

@@ -1,5 +1,4 @@
 #include <asm-generic/socket.h>
-#include <errno.h>
 #include <sys/wait.h>
 #include <inttypes.h>
 #include <netinet/in.h>
@@ -10,7 +9,6 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <signal.h>
 #include "listener.h"
 
 fd_t server_listen()
@@ -60,33 +58,7 @@ fd_t server_listen()
 
     int bind_result = bind(sock_fd, servinfo->ai_addr, servinfo->ai_addrlen);
     int listen_result = listen(sock_fd, BACKLOG);
-    // Signal(SIGCHLD, reap_zombies);
-
-    return sock_fd;
 
     freeaddrinfo(servinfo);
-    return EXIT_SUCCESS;
+    return sock_fd;
 }
-
-// void reap_zombies(int signo)
-// {
-//     int saved_errno = errno;
-//     while (waitpid(-1, NULL, WNOHANG) > 0) 
-//         ;
-//     errno = saved_errno;
-// }
-
-// child_callback *Signal(int sigtype, child_callback *func)
-// {
-//     struct sigaction act, oact;
-//
-//     act.sa_flags = 0;
-//     act.sa_handler = func;
-//     sigemptyset(&act.sa_mask);
-//
-//     if(sigaction(sigtype, &act, &oact) < 0){
-//         exit(SIG_ERR);
-//     };
-//
-//     return oact.sa_handler;
-// }

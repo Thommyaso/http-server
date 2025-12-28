@@ -4,9 +4,12 @@
 
 int main(int argc, char *argv[])
 {
-    fd_t lis_sock_fd = server_listen();
+    fd_t lis_fd = server_listen();
+    if(lis_fd < 0){
+        return EXIT_FAILURE;
+    }
 
-    server_run(lis_sock_fd);
+    server_run(lis_fd);
 
     return EXIT_SUCCESS;
 }

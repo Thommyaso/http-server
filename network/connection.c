@@ -1,7 +1,6 @@
 #include <asm-generic/errno.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdlib.h>
 #include <sys/poll.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -14,7 +13,12 @@
 #include "../http/response.h"
 #include "../utils/buff.h"
 
-int server_run(fd_t lis_fd)
+// TODO: currently, the listening socket is in a blocking state. 
+// This creates a possible scenario where in busy server, client-server handshake completes (3 way handshake in listen()),
+// but by the time my server gets to accept(), client could break connection, leaving my server stuck infinitely,
+// waiting for a connection that doesn't exist anymore. (small likelyhood, living this for later)
+
+void server_run(fd_t lis_fd)
 {
     struct pollfd poll_fds[POLL_FD_LIMIT];
     buff_t poll_requests[POLL_FD_LIMIT];
@@ -25,7 +29,7 @@ int server_run(fd_t lis_fd)
     poll_fds[LIS_FD_IDX].events = POLLRDNORM;
 
     for(int idx = 1; idx < POLL_FD_LIMIT; idx++){
-         // -1 indicates available space for accepted fd to be put
+         // -1 indicates available space for accepted fd to be placed
         poll_fds[idx].fd = -1;
     }
 
@@ -52,7 +56,7 @@ int server_run(fd_t lis_fd)
 
             // CLIENT WITH AN ERROR
             if (ppoll_fd->revents & POLLERR) {
-                // TODO: figure out what to do here, for now just close connection
+                // TODO: some error, figure out what to do here, for now just close connection
                 nready--;
                 kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
                 continue;
@@ -66,12 +70,13 @@ int server_run(fd_t lis_fd)
 
             // CLIENT AWAITING RESPONSE
             if (ppoll_fd->revents & POLLOUT) {
+                nready--;
                 handle_client_response(ppoll_fd, preq_buff, pres_buff);
             }
         }
     }
 
-    return EXIT_SUCCESS;
+    return;
 }
 
 void handle_new_connection(
@@ -235,7 +240,12 @@ void handle_client_response(
     }
 }
 
-void kill_client_connection(fd_t fd, struct pollfd *poll_fd, buff_t *preq_buff, buff_t *pres_buff){
+void kill_client_connection(
+    fd_t fd,
+    struct pollfd *poll_fd,
+    buff_t *preq_buff,
+    buff_t *pres_buff
+){
     close(fd);
     poll_fd->fd = -1;
     kill_buff(preq_buff);
