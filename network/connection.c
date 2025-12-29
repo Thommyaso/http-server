@@ -152,8 +152,7 @@ void handle_client_request(
     if(preq_buff->data == NULL || pres_buff->data == NULL){
         // for some reason the req/res buff is not initiated for this client
         // this shouldn't happen but if it does, close connection and bye
-        close(ppoll_fd->fd);
-        ppoll_fd->fd = -1;
+        kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
         return;
     }
 
@@ -246,7 +245,7 @@ void kill_client_connection(
     buff_t *preq_buff,
     buff_t *pres_buff
 ){
-    close(fd);
+    if(fd >= 0) close(fd); 
     poll_fd->fd = -1;
     kill_buff(preq_buff);
     kill_buff(pres_buff);

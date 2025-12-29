@@ -20,7 +20,9 @@ int init_buff(buff_t *buff, size_t new_data)
 }
 
 void kill_buff(buff_t *buff){
+    if(buff->data == NULL) return;
     free(buff->data);
+    buff->data = NULL;
 }
 
 int buff_prepend(buff_t *buff, char *prefix)
