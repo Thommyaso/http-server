@@ -248,10 +248,13 @@ void handle_client_response(
     //there is a file that needs sending together with headers
     if(pres_buff->filesize > 0){
         int sent_filesize =  sendfile(ppoll_fd->fd, pres_buff->file_fd, &pres_buff->size_uploaded, pres_buff->filesize - pres_buff->size_uploaded);
+        printf("file size: %d\n", sent_filesize);
         if(sent_filesize < 0){
-            // TODO: handle  this better later
-            // some error close connection
-            kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
+            if(errno != EWOULDBLOCK && errno != EAGAIN){
+                // TODO: handle  this better later
+                // some error close connection
+                kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
+            }
             return;
         }
 
