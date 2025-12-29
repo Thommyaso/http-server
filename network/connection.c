@@ -33,6 +33,9 @@ void server_run(fd_t lis_fd)
     for(int idx = 1; idx < POLL_FD_LIMIT; idx++){
          // -1 indicates available space for accepted fd to be placed
         poll_fds[idx].fd = -1;
+        poll_requests[idx].data = NULL;
+        poll_responses[idx].base.data = NULL;
+        poll_responses[idx].file_fd = -1;
     }
 
     for(;;){
@@ -216,8 +219,8 @@ void handle_client_response(
     buff_t *preq_buff,
     res_buff_t *pres_buff
 ){
-    int sent_size;
-    int size_to_send;
+    int sent_size = 0;
+    int size_to_send = 0;
     char *psend_start;
 
     //sending headers
@@ -244,15 +247,13 @@ void handle_client_response(
     // complete headers have been passed,
     //there is a file that needs sending together with headers
     if(pres_buff->filesize > 0){
-        off_t *offset = &pres_buff->size_uploaded;
-        int sent_filesize =  sendfile(ppoll_fd->fd, pres_buff->file_fd, offset, pres_buff->filesize);
+        int sent_filesize =  sendfile(ppoll_fd->fd, pres_buff->file_fd, &pres_buff->size_uploaded, pres_buff->filesize - pres_buff->size_uploaded);
         if(sent_filesize < 0){
             // TODO: handle  this better later
             // some error close connection
             kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
             return;
         }
-        pres_buff->size_uploaded += sent_filesize;
 
         if(pres_buff->size_uploaded < pres_buff->filesize){
             //whole file didn't fit in sendfile buff got to wait till space frees to send the rest

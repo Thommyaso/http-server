@@ -21,7 +21,6 @@
 res_code_t find_resource(res_buff_t *res_buff, headers_map_t *headers_map)
 {
     int fail;
-    buff_t *buff = &res_buff->base;
 
     res_buff->size_uploaded = 0;
     res_buff->filesize = 0;

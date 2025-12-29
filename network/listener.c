@@ -31,18 +31,18 @@ fd_t server_listen()
     struct addrinfo *p;
     for (p = servinfo; p != NULL; p = p->ai_next) {
         void *addr;
-        char *ipver;
+        // char *ipver;
         struct sockaddr_in *ipv4;
         struct sockaddr_in6 *ipv6;
 
         if(p->ai_family == AF_INET){
             ipv4 = (struct sockaddr_in *)p->ai_addr;
             addr = &(ipv4->sin_addr);
-            ipver = "IPv4";
+            // ipver = "IPv4";
         } else {
             ipv6 = (struct sockaddr_in6 *)p->ai_addr;
             addr = &(ipv6->sin6_addr);
-            ipver = "IPv6";
+            // ipver = "IPv6";
         }
 
         inet_ntop(p->ai_family,addr, ipstr, sizeof ipstr);
@@ -57,7 +57,11 @@ fd_t server_listen()
     //
 
     int bind_result = bind(sock_fd, servinfo->ai_addr, servinfo->ai_addrlen);
-    int listen_result = listen(sock_fd, BACKLOG);
+    if(bind_result < 0){
+        return EXIT_FAILURE;
+    }
+
+    listen(sock_fd, BACKLOG);
 
     freeaddrinfo(servinfo);
     return sock_fd;
