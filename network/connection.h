@@ -10,39 +10,33 @@
 #define POLL_FD_LIMIT 10000
 #define INF_TIM -1
 
-typedef struct {
-    size_t capacity;
-    size_t used;
-    char *data;
-} req_buf_t;
-
 void server_run(fd_t lis_sock_fd);
 
 void kill_client_connection(
     fd_t fd,
     struct pollfd pll_fds[],
     buff_t *preq_buff,
-    buff_t *pres_buff
+    res_buff_t *pres_buff
 );
 
 void handle_new_connection(
     fd_t lis_fd,
     struct pollfd poll_fds[],
     buff_t poll_requests[],
-    buff_t poll_responses[],
+    res_buff_t poll_responses[],
     int *nfdsp1
 );
 
 void handle_client_request(
     struct pollfd *ppoll_fd,
     buff_t *preq_buff,
-    buff_t *pres_buff
+    res_buff_t *pres_buff
 );
 
 void handle_client_response(
     struct pollfd *ppoll_fd,
     buff_t *preq_buff,
-    buff_t *pres_buff
+    res_buff_t *pres_buff
 );
 
 #endif

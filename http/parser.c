@@ -12,7 +12,7 @@ int parse_req(buff_t *buff, headers_map_t *header_map)
 
     char *headers_start = parse_line_section(buff->data, header_map);
 
-    if(!headers_start || headers_start - buff->data > buff->used) return REQ_FAIL;
+    if(!headers_start || headers_start - buff->data > buff->size_used) return REQ_FAIL;
 
     int result = parse_headers_section(buff, headers_start, header_map);
 
@@ -63,7 +63,7 @@ int parse_headers_section(buff_t *buff, char *cursor_pos, headers_map_t *header_
 {
     int line;
     char *line_end = NULL;
-    for(line = 0; cursor_pos <  buff->data + buff->used && line < HEADER_LIMIT; line++) {
+    for(line = 0; cursor_pos <  buff->data + buff->size_used && line < HEADER_LIMIT; line++) {
         line_end = strstr(cursor_pos, LINE_END);
 
         // something went wrong, every line is supposed to have "\r\n" ending, send failed response

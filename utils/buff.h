@@ -1,20 +1,35 @@
 #ifndef __BUFF_UTIL__
 #define __BUFF_UTIL__
 
+#include <fcntl.h>
 #include <string.h>
+#include "../network/listener.h"
 
-#define BUFF_SIZE 2000
+#define BUFF_SIZE 2048
 
 typedef struct {
-    size_t size;
-    size_t used;
+    size_t total_size;
+    size_t size_used;
+    size_t size_processed;
     char *data;
-    size_t processed;
 } buff_t;
+
+typedef struct {
+    buff_t base;
+    char *filepath;
+    size_t filesize;
+    size_t filepath_total_len;
+    off_t size_uploaded;
+    fd_t file_fd;
+} res_buff_t;
 
 int init_buff(buff_t *buff, size_t size);
 
+int init_res_buff(res_buff_t *res_buff, size_t new_data);
+
 void kill_buff(buff_t *buff);
+
+void kill_res_buff(res_buff_t *res_buff);
 
 int buff_prepend(buff_t *buff, char *prefix);
 

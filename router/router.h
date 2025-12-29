@@ -26,10 +26,14 @@ typedef struct {
     char *data;
 } resource_t;
 
-res_code_t get_resource(buff_t *buff, headers_map_t *headers_map);
+res_code_t find_resource(res_buff_t *res_buff, headers_map_t *headers_map);
 
 void remove_trailing_slash(char *filepath);
 
 int combine_filepath(char *dest, char *src, int max_len);
+
+int init_filepath(res_buff_t *res_buff, size_t len);
+
+int append_filepath(res_buff_t *res_buff, char *str);
 
 #endif

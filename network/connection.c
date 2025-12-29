@@ -1,11 +1,13 @@
 #include <asm-generic/errno.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <sys/poll.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <poll.h>
+#include <sys/sendfile.h>
 
 #include "./listener.h"
 #include "./connection.h"
@@ -21,8 +23,8 @@
 void server_run(fd_t lis_fd)
 {
     struct pollfd poll_fds[POLL_FD_LIMIT];
-    buff_t poll_requests[POLL_FD_LIMIT];
-    buff_t poll_responses[POLL_FD_LIMIT];
+    buff_t poll_requests[POLL_FD_LIMIT] ={0};
+    res_buff_t poll_responses[POLL_FD_LIMIT] ={0};
 
     int nfdsp1 = LIS_FD_IDX + 1;
     poll_fds[LIS_FD_IDX].fd = lis_fd;
@@ -51,7 +53,7 @@ void server_run(fd_t lis_fd)
             if(poll_fds[idx].fd < 0) continue; // fd not in use (-1)
 
             buff_t *preq_buff = &poll_requests[idx];
-            buff_t *pres_buff = &poll_responses[idx];
+            res_buff_t *pres_buff = &poll_responses[idx];
             struct pollfd *ppoll_fd = &poll_fds[idx];
 
             // CLIENT WITH AN ERROR
@@ -75,15 +77,13 @@ void server_run(fd_t lis_fd)
             }
         }
     }
-
-    return;
 }
 
 void handle_new_connection(
     fd_t lis_fd,
     struct pollfd poll_fds[],
     buff_t poll_requests[],
-    buff_t poll_responses[],
+    res_buff_t poll_responses[],
     int *nfdsp1
 ){
     int fail;
@@ -101,7 +101,7 @@ void handle_new_connection(
     for (int idx = 1; idx < POLL_FD_LIMIT; idx++) {
         if(poll_fds[idx].fd != -1) continue; // position taken;
 
-        if(poll_requests[idx].data != NULL || poll_responses[idx].data != NULL){
+        if(poll_requests[idx].data != NULL || poll_responses[idx].base.data != NULL){
             // something went wrong, probably forgot to clean up req/res heap after finishing with the area
             // we shouldn't arrive here unless idx indicates that this is a free position but the value is still a pointer to something
             // just overwriting it could result in something else trying  to read it in the future (possibly not terminated correctly?)
@@ -116,7 +116,7 @@ void handle_new_connection(
             break;
         }
 
-        fail = init_buff(&poll_responses[idx], 0);
+        fail = init_res_buff(&poll_responses[idx], 0);
         if(fail){
             // error allocating response buff memory
             // it aint happening for this client, sorry
@@ -145,18 +145,18 @@ void handle_new_connection(
 void handle_client_request(
     struct pollfd *ppoll_fd,
     buff_t *preq_buff,
-    buff_t *pres_buff
+    res_buff_t *pres_buff
 ){
     int fail;
 
-    if(preq_buff->data == NULL || pres_buff->data == NULL){
+    if(preq_buff->data == NULL || pres_buff->base.data == NULL){
         // for some reason the req/res buff is not initiated for this client
         // this shouldn't happen but if it does, close connection and bye
         kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
         return;
     }
 
-    int available_req_space = preq_buff->size - preq_buff->used;
+    int available_req_space = preq_buff->total_size - preq_buff->size_used;
     if(available_req_space <= 0) {
         fail = buff_increase(preq_buff, BUFF_SIZE);
         if(fail){
@@ -164,10 +164,10 @@ void handle_client_request(
             return;
         }
 
-        available_req_space = preq_buff->size - preq_buff->used;
+        available_req_space = preq_buff->total_size - preq_buff->size_used;
     }
 
-    char *pwrite_start = preq_buff->data + preq_buff->used;
+    char *pwrite_start = preq_buff->data + preq_buff->size_used;
     int recv_size = recv(ppoll_fd->fd, pwrite_start, available_req_space, 0);
 
     if(recv_size < 0){
@@ -184,8 +184,8 @@ void handle_client_request(
         // client closed connection (timeout etc.)
         kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
     } else {
-        preq_buff->used += recv_size;
-        preq_buff->data[preq_buff->used] = '\0';
+        preq_buff->size_used += recv_size;
+        preq_buff->data[preq_buff->size_used] = '\0';
 
         headers_map_t headers_map = {0};
         int parse_result = parse_req(preq_buff, &headers_map);
@@ -214,39 +214,77 @@ void handle_client_request(
 void handle_client_response(
     struct pollfd *ppoll_fd,
     buff_t *preq_buff,
-    buff_t *pres_buff
+    res_buff_t *pres_buff
 ){
-    char *psend_start= pres_buff->data + pres_buff->processed;
-    int size_to_send = pres_buff->used - pres_buff->processed;   
-    int sent_size = send(ppoll_fd->fd, psend_start, size_to_send, 0);
+    int sent_size;
+    int size_to_send;
+    char *psend_start;
+
+    //sending headers
+    if(pres_buff->base.size_used != pres_buff->base.size_processed){
+        psend_start = pres_buff->base.data + pres_buff->base.size_processed;
+        size_to_send = pres_buff->base.size_used - pres_buff->base.size_processed;   
+        sent_size = send(ppoll_fd->fd, psend_start, size_to_send, 0);
+    }
 
     if(sent_size < 0){
         if(errno != EWOULDBLOCK){
             //TODO: some error, create handling
         }
         return;
+    }  
+
+    pres_buff->base.size_processed += sent_size;
+
+    // headers didnt fit in one send buffer, gotta wait till there is room and send rest
+    if(sent_size < size_to_send){
+        return;
     }
 
-    pres_buff->processed += sent_size;
-    if(pres_buff->processed == pres_buff->used){
-        // complete response has been passed,
-        // buffers can be reset and fd can be set to listening for new requests
-        preq_buff->used = 0;
-        pres_buff->used = 0;
-        ppoll_fd->events = POLLRDNORM;
-    } else{
-        // only part of response has been sent, skip to next the iteration to pass remaining buffer
+    // complete headers have been passed,
+    //there is a file that needs sending together with headers
+    if(pres_buff->filesize > 0){
+        off_t *offset = &pres_buff->size_uploaded;
+        int sent_filesize =  sendfile(ppoll_fd->fd, pres_buff->file_fd, offset, pres_buff->filesize);
+        if(sent_filesize < 0){
+            // TODO: handle  this better later
+            // some error close connection
+            kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
+            return;
+        }
+        pres_buff->size_uploaded += sent_filesize;
+
+        if(pres_buff->size_uploaded < pres_buff->filesize){
+            //whole file didn't fit in sendfile buff got to wait till space frees to send the rest
+            return;
+        }
     }
+
+    // whole headers and (potential)file have been sent, req and res buffers can be reset, and poll fd can be set to listening
+    preq_buff->size_used = 0;
+    preq_buff->data[0] = '\0';
+    pres_buff->base.size_used = 0;
+    pres_buff->base.size_processed = 0;
+    pres_buff->base.data[0] = '\0';
+    pres_buff->filesize = 0;
+    if(pres_buff->file_fd > 0) close(pres_buff->file_fd);
+    pres_buff->file_fd = -1;
+    pres_buff->size_uploaded = 0;
+
+    ppoll_fd->events = POLLRDNORM;
 }
 
 void kill_client_connection(
     fd_t fd,
     struct pollfd *poll_fd,
     buff_t *preq_buff,
-    buff_t *pres_buff
+    res_buff_t *pres_buff
 ){
     if(fd >= 0) close(fd); 
     poll_fd->fd = -1;
     kill_buff(preq_buff);
-    kill_buff(pres_buff);
+
+    kill_res_buff(pres_buff);
+    if(pres_buff->file_fd > 0) close(pres_buff->file_fd);
+    pres_buff->file_fd = -1;
 }

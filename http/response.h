@@ -10,5 +10,5 @@
 "Content-Length: %zu\r\n"\
 "\r\n"
 
-int build_response(headers_map_t *headers_map, buff_t *res_buff);
+int build_response(headers_map_t *headers_map, res_buff_t *res_buff);
 #endif
