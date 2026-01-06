@@ -13,7 +13,6 @@
 void server_run(fd_t lis_sock_fd);
 
 void kill_client_connection(
-    fd_t fd,
     struct pollfd pll_fds[],
     buff_t *preq_buff,
     res_buff_t *pres_buff
@@ -38,5 +37,7 @@ void handle_client_response(
     buff_t *preq_buff,
     res_buff_t *pres_buff
 );
+
+void reset_buffers( buff_t *preq_buff, res_buff_t *pres_buff);
 
 #endif

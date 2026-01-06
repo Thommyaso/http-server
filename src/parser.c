@@ -7,7 +7,7 @@ int parse_req(buff_t *buff, headers_map_t *header_map)
 {
     char *header_end = strstr(buff->data, HEADER_END);
 
-    //header not complete tell connnection to keep waiting for rest of the info
+    //Header not complete tell connnection to keep waiting for the rest
     if(header_end == NULL) return REQ_NOT_COMPLETE;
 
     char *headers_start = parse_line_section(buff->data, header_map);
@@ -19,7 +19,13 @@ int parse_req(buff_t *buff, headers_map_t *header_map)
     return result;
 }
 
-char *parse_line_section(char *cursor_pos, headers_map_t *status_line)
+/**
+ * Parses first line of the request called 'status line'
+ * If succesfull, returns pointer to the start of the headers
+ * @param cursor_pos - is the start of the request buffer
+ * @param header_map - is a pointer to headers_map
+ */
+char *parse_line_section(char *cursor_pos, headers_map_t *headers_map)
 {
     int idx;
 
@@ -35,13 +41,13 @@ char *parse_line_section(char *cursor_pos, headers_map_t *status_line)
         
         switch (idx) {
             case 0:
-                status_line->method = cursor_pos;
+                headers_map->method = cursor_pos;
                 break;
             case 1:
-                status_line->url = cursor_pos;
+                headers_map->url = cursor_pos;
                 break;
             case 2:
-                status_line->http = cursor_pos;
+                headers_map->http = cursor_pos;
                 break;
         }
 
@@ -59,6 +65,12 @@ char *parse_line_section(char *cursor_pos, headers_map_t *status_line)
     return line_end + 2;
 }
 
+/**
+ * Parses headers from the request
+ * @param buff - is a pointer to the request buffer
+ * @param cursor_pos - is the start of the header section in the buffer
+ * @param header_map - is a pointer to headers_map
+ */
 int parse_headers_section(buff_t *buff, char *cursor_pos, headers_map_t *header_map)
 {
     int line;

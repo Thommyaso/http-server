@@ -7,14 +7,12 @@
 #include "router.h"
 #include "parser.h"
 #include "utils/buff.h"
-
-#define FILEPATH_INCREMENT 100
+#include "../server_config.h"
 
 /*
- * Simple resource retrival, if url is a directory it looks for index.html in that dir,
- * otherwise it looks for the file reqested
- * updates buffer -- at this point buffer is only meant to contain this filecontent so content-length
- * can be derived from used buffer size
+ * Simple resource retrival. 
+ * If url is a directory it looks for the default file (DEFAULT_FILE macro in router.h) in that dir,
+ * otherwise it looks for the file reqested, filepath gets initiated and added to response buffer
  *
  * Returns resonse code
  */
@@ -41,7 +39,7 @@ res_code_t find_resource(res_buff_t *res_buff, headers_map_t *headers_map)
     if (S_ISDIR(st.st_mode)) {
         remove_trailing_slash(res_buff->filepath);
 
-        fail = append_filepath(res_buff, "/index.html");
+        fail = append_filepath(res_buff, DEFAULT_FILE);
         if(fail) return RESPONSE_500;
 
         if(stat(res_buff->filepath, &st) != 0) return RESPONSE_404; // file not found

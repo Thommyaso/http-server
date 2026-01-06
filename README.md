@@ -14,6 +14,22 @@ The project is based on *UNIX Network Programming* (2nd Edition) by W. Richard S
 - **GET requests only**  
 - No external HTTP libraries  
 
+## Configuration
+
+Before building, edit `server_config.h` to set:
+
+- **SERVER_PORT** – Port to listen on (default: `"8080"`)
+- **ROOT_DIR** – Absolute path to your website files
+- **DEFAULT_FILE** – File to serve for directory requests (default: `"/index.html"`)
+
+Example:
+
+```c
+#define SERVER_PORT "8080"
+#define ROOT_DIR "/var/www/mysite"
+#define DEFAULT_FILE "/index.html"
+```
+
 ## Building
 
 The project uses a simple Makefile.
@@ -32,18 +48,10 @@ To remove build artifacts:
 make clean
 ```
 
-## Notes
-
-At the moment, the path to the served domain is hardcoded.  
-The root directory is defined via `ROOT_DIR` in `src/router.h`.
-
-This will be replaced with configuration-based setup in a future update.
-
 
 ## Planned Work
 
-- Configuration file parsing  
-- Support for multiple domains / virtual hosts  
+- Multi domain configuration file parsing, similar to nginx config files in /etc/nginx/sites_available
 - Switch to epoll() to follow nginx setup
 - Improved request parsing and error handling  
 - Additional HTTP features  

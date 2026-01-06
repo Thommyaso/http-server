@@ -5,8 +5,6 @@
 #include "connection.h"
 #include "parser.h"
 
-#define ROOT_DIR "/home/thomas/Repositories/www/lillicrap/public"
-
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 #define RESOURCE_READ_SUCCES 0
@@ -14,6 +12,8 @@
 #define RESOURCE_READ_FAILURE 1
 
 #define MAX_FILEPATH 500
+
+#define FILEPATH_INCREMENT 100
 
 typedef enum {
     RESPONSE_200 = 200,

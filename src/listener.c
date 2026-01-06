@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include "listener.h"
+#include "../server_config.h"
 
 fd_t server_listen()
 {
@@ -23,7 +24,7 @@ fd_t server_listen()
     hints.ai_flags = AI_PASSIVE; 
 
     int status;
-    if((status = getaddrinfo(NULL, "8080", &hints, &servinfo)) != 0){
+    if((status = getaddrinfo(NULL, SERVER_PORT, &hints, &servinfo)) != 0){
         printf("gai error: %s\n", gai_strerror(status));
         return EXIT_FAILURE;
     }
@@ -31,22 +32,18 @@ fd_t server_listen()
     struct addrinfo *p;
     for (p = servinfo; p != NULL; p = p->ai_next) {
         void *addr;
-        // char *ipver;
         struct sockaddr_in *ipv4;
         struct sockaddr_in6 *ipv6;
 
         if(p->ai_family == AF_INET){
             ipv4 = (struct sockaddr_in *)p->ai_addr;
             addr = &(ipv4->sin_addr);
-            // ipver = "IPv4";
         } else {
             ipv6 = (struct sockaddr_in6 *)p->ai_addr;
             addr = &(ipv6->sin6_addr);
-            // ipver = "IPv6";
         }
 
         inet_ntop(p->ai_family,addr, ipstr, sizeof ipstr);
-        // printf("this is ip: %s, ip version: %s\n", ipstr, ipver);
     }
 
     fd_t sock_fd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);

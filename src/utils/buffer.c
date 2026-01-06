@@ -19,6 +19,13 @@ int init_buff(buff_t *buff, size_t new_data)
     return 0;
 }
 
+void kill_buff(buff_t *buff)
+{
+    if(buff->data == NULL) return;
+    free(buff->data);
+    buff->data = NULL;
+}
+
 int init_res_buff(res_buff_t *res_buff, size_t new_data)
 {
     int fail = init_buff(&res_buff->base, 0);
@@ -27,13 +34,6 @@ int init_res_buff(res_buff_t *res_buff, size_t new_data)
     res_buff->filepath = NULL;
     res_buff->size_uploaded = 0;
     return 0;
-}
-
-void kill_buff(buff_t *buff)
-{
-    if(buff->data == NULL) return;
-    free(buff->data);
-    buff->data = NULL;
 }
 
 void kill_res_buff(res_buff_t *res_buff)
@@ -101,17 +101,18 @@ int buff_increase(buff_t *buff, size_t size)
     return 0;
 }
 
+/**
+ * This function can be called to calculate new buffer
+ * or just as a safety check to make sure, what we're adding
+ * to the buffer will fit inside
+ */
 size_t calc_buff_size(buff_t *buff, size_t new_data)
 {
-    // int truncates values, this creates an offset,
-    // so that anything over buff_size and under 2*buff_size will make multiplier 2 -- basically this works like celi();
     int multiplier = (BUFF_SIZE + MAX(1, new_data) - 1) / BUFF_SIZE;
 
     if(buff == NULL){
         return BUFF_SIZE * multiplier;
     }else if((buff->total_size - buff->size_used) > new_data){
-        // this function can be called just in case, before populating data, so in case 
-        // size doesn't need changing returns 0
         return 0;
     } else {
         return buff->total_size + BUFF_SIZE * multiplier;

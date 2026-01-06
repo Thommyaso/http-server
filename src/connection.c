@@ -1,7 +1,6 @@
 #include <asm-generic/errno.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <sys/poll.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -18,7 +17,7 @@
 // TODO: currently, the listening socket is in a blocking state. 
 // This creates a possible scenario where in busy server, client-server handshake completes (3 way handshake in listen()),
 // but by the time my server gets to accept(), client could break connection, leaving my server stuck infinitely,
-// waiting for a connection that doesn't exist anymore. (small likelyhood, living this for later)
+// waiting for a connection that doesn't exist anymore. (will handle this later)
 
 void server_run(fd_t lis_fd)
 {
@@ -31,7 +30,7 @@ void server_run(fd_t lis_fd)
     poll_fds[LIS_FD_IDX].events = POLLRDNORM;
 
     for(int idx = 1; idx < POLL_FD_LIMIT; idx++){
-         // -1 indicates available space for accepted fd to be placed
+        // -1 indicates available space for accepted fd to be placed
         poll_fds[idx].fd = -1;
         poll_requests[idx].data = NULL;
         poll_responses[idx].base.data = NULL;
@@ -63,7 +62,7 @@ void server_run(fd_t lis_fd)
             if (ppoll_fd->revents & POLLERR) {
                 // TODO: some error, figure out what to do here, for now just close connection
                 nready--;
-                kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
+                kill_client_connection(ppoll_fd, preq_buff, pres_buff);
                 continue;
             }
 
@@ -94,7 +93,8 @@ void handle_new_connection(
 
     if(conn_fd < 0){
         // TODO: handle errors in here?
-        return; // connection socket failed;
+        // connection socket failed
+        return;
     }
 
     int flags = fcntl(conn_fd, F_GETFL, 0);
@@ -105,10 +105,7 @@ void handle_new_connection(
         if(poll_fds[idx].fd != -1) continue; // position taken;
 
         if(poll_requests[idx].data != NULL || poll_responses[idx].base.data != NULL){
-            // something went wrong, probably forgot to clean up req/res heap after finishing with the area
-            // we shouldn't arrive here unless idx indicates that this is a free position but the value is still a pointer to something
-            // just overwriting it could result in something else trying  to read it in the future (possibly not terminated correctly?)
-            // got to make sure that  after finishing connection both req and res pointers are reset to null in arrays (poll_requests and poll_responses)
+            // this shouldn't be possible but just in case, if buffers are initiated on this free position, skip it
             continue;
         }
 
@@ -155,7 +152,7 @@ void handle_client_request(
     if(preq_buff->data == NULL || pres_buff->base.data == NULL){
         // for some reason the req/res buff is not initiated for this client
         // this shouldn't happen but if it does, close connection and bye
-        kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
+        kill_client_connection(ppoll_fd, preq_buff, pres_buff);
         return;
     }
 
@@ -163,7 +160,7 @@ void handle_client_request(
     if(available_req_space <= 0) {
         fail = buff_increase(preq_buff, BUFF_SIZE);
         if(fail){
-            kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
+            kill_client_connection(ppoll_fd, preq_buff, pres_buff);
             return;
         }
 
@@ -176,16 +173,16 @@ void handle_client_request(
     if(recv_size < 0){
         if(errno == ECONNRESET){
             // client sent RST, close connection
-            kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
+            kill_client_connection(ppoll_fd, preq_buff, pres_buff);
             return;
         }else{
-            // TODO: this needs handling, for now yolo
-            kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
+            // TODO: this needs handling, for now bye
+            kill_client_connection(ppoll_fd, preq_buff, pres_buff);
             return;
         }
     } else if(recv_size == 0){
         // client closed connection (timeout etc.)
-        kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
+        kill_client_connection(ppoll_fd, preq_buff, pres_buff);
     } else {
         preq_buff->size_used += recv_size;
         preq_buff->data[preq_buff->size_used] = '\0';
@@ -197,7 +194,7 @@ void handle_client_request(
             return;
         } else if(parse_result == REQ_FAIL){
             // request malformed ignore and close the connection
-            kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
+            kill_client_connection(ppoll_fd, preq_buff, pres_buff);
             return;
         }
 
@@ -208,7 +205,7 @@ void handle_client_request(
 
         if(fail){
             // response build failed, close connection
-            kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
+            kill_client_connection(ppoll_fd, preq_buff, pres_buff);
             return;
         }
     }
@@ -233,6 +230,7 @@ void handle_client_response(
     if(sent_size < 0){
         if(errno != EWOULDBLOCK){
             //TODO: some error, create handling
+            kill_client_connection(ppoll_fd, preq_buff, pres_buff);
         }
         return;
     }  
@@ -248,12 +246,11 @@ void handle_client_response(
     //there is a file that needs sending together with headers
     if(pres_buff->filesize > 0){
         int sent_filesize =  sendfile(ppoll_fd->fd, pres_buff->file_fd, &pres_buff->size_uploaded, pres_buff->filesize - pres_buff->size_uploaded);
-        printf("file size: %d\n", sent_filesize);
         if(sent_filesize < 0){
             if(errno != EWOULDBLOCK && errno != EAGAIN){
                 // TODO: handle  this better later
                 // some error close connection
-                kill_client_connection(ppoll_fd->fd, ppoll_fd, preq_buff, pres_buff);
+                kill_client_connection(ppoll_fd, preq_buff, pres_buff);
             }
             return;
         }
@@ -264,31 +261,40 @@ void handle_client_response(
         }
     }
 
-    // whole headers and (potential)file have been sent, req and res buffers can be reset, and poll fd can be set to listening
-    preq_buff->size_used = 0;
-    preq_buff->data[0] = '\0';
-    pres_buff->base.size_used = 0;
-    pres_buff->base.size_processed = 0;
-    pres_buff->base.data[0] = '\0';
-    pres_buff->filesize = 0;
-    if(pres_buff->file_fd > 0) close(pres_buff->file_fd);
-    pres_buff->file_fd = -1;
-    pres_buff->size_uploaded = 0;
-
+    // whole headers and (potential)file have been sent.
+    // Req and res buffers can be reset, and fd for this connection can be set to listening
+    reset_buffers(preq_buff, pres_buff);
     ppoll_fd->events = POLLRDNORM;
 }
 
 void kill_client_connection(
-    fd_t fd,
     struct pollfd *poll_fd,
     buff_t *preq_buff,
     res_buff_t *pres_buff
 ){
-    if(fd >= 0) close(fd); 
+    if(poll_fd->fd >= 0) close(poll_fd->fd); 
     poll_fd->fd = -1;
     kill_buff(preq_buff);
 
     kill_res_buff(pres_buff);
     if(pres_buff->file_fd > 0) close(pres_buff->file_fd);
     pres_buff->file_fd = -1;
+}
+
+void reset_buffers( buff_t *preq_buff, res_buff_t *pres_buff)
+{
+    //request buffer
+    preq_buff->size_used = 0;
+    preq_buff->data[0] = '\0';
+
+    // response buffer
+    pres_buff->base.size_used = 0;
+    pres_buff->base.size_processed = 0;
+    pres_buff->base.data[0] = '\0';
+
+    // response file that was passed using sendfile()
+    if(pres_buff->file_fd > 0) close(pres_buff->file_fd);
+    pres_buff->filesize = 0;
+    pres_buff->file_fd = -1;
+    pres_buff->size_uploaded = 0;
 }

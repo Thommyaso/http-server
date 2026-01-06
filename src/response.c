@@ -12,7 +12,7 @@ int build_response(headers_map_t *headers_map, res_buff_t *res_buff)
     int fail;
     char tmp_buff[TMP_BUFF_SIZE] = {0}; 
 
-    // this is important to reset, just in case
+    // resetting just in case, just in case
     res_buff->base.size_processed = 0;
     res_buff->base.size_used = 0;
 
