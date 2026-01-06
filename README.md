@@ -20,14 +20,16 @@ The project uses a simple Makefile.
 
 From the project root, run:
 
-``` make
+```bash
+make
 ```
 
 This will build the `server` binary.
 
 To remove build artifacts:
 
-``` make clean
+```bash
+make clean
 ```
 
 ## Notes
