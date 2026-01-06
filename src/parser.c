@@ -1,7 +1,7 @@
 #include <string.h>
-#include "../network/connection.h"
-#include "./parser.h"
-#include "../utils/buff.h"
+#include "connection.h"
+#include "parser.h"
+#include "utils/buff.h"
 
 int parse_req(buff_t *buff, headers_map_t *header_map)
 {

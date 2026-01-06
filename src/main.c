@@ -1,5 +1,5 @@
-#include "./network/listener.h"
-#include "./network/connection.h"
+#include "listener.h"
+#include "connection.h"
 #include <stdlib.h>
 
 int main(int argc, char *argv[])

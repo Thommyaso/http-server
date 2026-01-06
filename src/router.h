@@ -1,9 +1,9 @@
 #ifndef __ROUTER__
 #define __ROUTER__
 
-#include "../utils/buff.h"
-#include "../network/connection.h"
-#include "../http/parser.h"
+#include "utils/buff.h"
+#include "connection.h"
+#include "parser.h"
 
 #define ROOT_DIR "/home/thomas/Repositories/www/lillicrap/public"
 

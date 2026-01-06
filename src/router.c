@@ -5,8 +5,8 @@
 #include <sys/stat.h>
 
 #include "router.h"
-#include "../http/parser.h"
-#include "../utils/buff.h"
+#include "parser.h"
+#include "utils/buff.h"
 
 #define FILEPATH_INCREMENT 100
 

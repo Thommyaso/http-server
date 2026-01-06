@@ -1,8 +1,8 @@
 #ifndef __PARSER__
 #define __PARSER__
 
-#include "../network/connection.h"
-#include "../utils/buff.h"
+#include "connection.h"
+#include "utils/buff.h"
 
 #define REQ_NOT_COMPLETE 1
 

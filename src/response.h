@@ -1,8 +1,8 @@
 #ifndef __RESPONSE__
 #define __RESPONSE__
 
-#include "../router/router.h"
-#include "../utils/buff.h"
+#include "router.h"
+#include "utils/buff.h"
 #include "parser.h"
 
 #define RESPONSE_FMT \

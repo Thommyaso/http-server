@@ -1,7 +1,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
-#include "../utils/buff.h"
+#include "utils/buff.h"
 #include "response.h"
 #include "parser.h"
 

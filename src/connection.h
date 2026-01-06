@@ -1,7 +1,7 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
-#include "../utils/buff.h"
+#include "./utils/buff.h"
 #include "./listener.h"
 #include <stddef.h>
 #include <poll.h>

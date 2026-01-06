@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
-#include "./buff.h"
+#include "buff.h"
 #include <sys/param.h>
 
 int init_buff(buff_t *buff, size_t new_data)

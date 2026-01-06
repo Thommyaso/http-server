@@ -11,9 +11,9 @@
 
 #include "./listener.h"
 #include "./connection.h"
-#include "../http/parser.h"
-#include "../http/response.h"
-#include "../utils/buff.h"
+#include "parser.h"
+#include "response.h"
+#include "utils/buff.h"
 
 // TODO: currently, the listening socket is in a blocking state. 
 // This creates a possible scenario where in busy server, client-server handshake completes (3 way handshake in listen()),
