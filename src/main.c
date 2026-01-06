@@ -2,7 +2,7 @@
 #include "connection.h"
 #include <stdlib.h>
 
-int main(int argc, char *argv[])
+int main()
 {
     fd_t lis_fd = server_listen();
     if(lis_fd < 0){
