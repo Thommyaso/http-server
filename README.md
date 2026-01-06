@@ -44,6 +44,7 @@ This will be replaced with configuration-based setup in a future update.
 
 - Configuration file parsing  
 - Support for multiple domains / virtual hosts  
+- Switch to epoll() to follow nginx setup
 - Improved request parsing and error handling  
 - Additional HTTP features  
 
