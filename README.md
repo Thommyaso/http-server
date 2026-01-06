@@ -14,7 +14,29 @@ The project is based on *UNIX Network Programming* (2nd Edition) by W. Richard S
 - **GET requests only**  
 - No external HTTP libraries  
 
-The focus so far has been on learning and correctness, not completeness.
+## Building
+
+The project uses a simple Makefile.
+
+From the project root, run:
+
+``` make
+```
+
+This will build the `server` binary.
+
+To remove build artifacts:
+
+``` make clean
+```
+
+## Notes
+
+At the moment, the path to the served domain is hardcoded.  
+The root directory is defined via `ROOT_DIR` in `src/router.h`.
+
+This will be replaced with configuration-based setup in a future update.
+
 
 ## Planned Work
 
@@ -23,6 +45,4 @@ The focus so far has been on learning and correctness, not completeness.
 - Improved request parsing and error handling  
 - Additional HTTP features  
 
-## Status
-
-Work in progress.
+Work in progress..
