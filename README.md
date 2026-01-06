@@ -20,14 +20,14 @@ Before building, edit `server_config.h` to set:
 
 - **SERVER_PORT** – Port to listen on (default: `"8080"`)
 - **ROOT_DIR** – Absolute path to your website files
-- **DEFAULT_FILE** – File to serve for directory requests (default: `"/index.html"`)
+- **DEFAULT_FILE** – File to serve for directory requests (default: `"index.html"`)
 
 Example:
 
 ```c
 #define SERVER_PORT "8080"
 #define ROOT_DIR "/var/www/mysite"
-#define DEFAULT_FILE "/index.html"
+#define DEFAULT_FILE "index.html"
 ```
 
 ## Building
