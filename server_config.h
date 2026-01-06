@@ -10,4 +10,4 @@
 // root directory hast to be an absolute path
 #define ROOT_DIR "/home/thomas/Repositories/www/lillicrap/public"
 
-#define DEFAULT_FILE "/index.html"
+#define DEFAULT_FILE "index.html"

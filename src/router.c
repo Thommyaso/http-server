@@ -37,7 +37,13 @@ res_code_t find_resource(res_buff_t *res_buff, headers_map_t *headers_map)
     if(stat(res_buff->filepath, &st) != 0) return RESPONSE_500;
 
     if (S_ISDIR(st.st_mode)) {
-        remove_trailing_slash(res_buff->filepath);
+
+        // making sure that path ends with '/' to append file to
+        int end_idx = strlen(res_buff->filepath) - 1;
+        if(res_buff->filepath[end_idx] != '/'){
+            fail = append_filepath(res_buff, "/");
+            if(fail) return RESPONSE_500;
+        }
 
         fail = append_filepath(res_buff, DEFAULT_FILE);
         if(fail) return RESPONSE_500;
@@ -85,16 +91,4 @@ int append_filepath(res_buff_t *res_buff, char *str)
 
     strcat(res_buff->filepath, str);
     return 0;
-}
-
-/*
-* Helper function to remove trailing forward slash if it exists
-* If it doesn't exist nothing happens
-* This ensures we can safely append file to the directory path
-*/
-void remove_trailing_slash(char *filepath)
-{
-    int end_idx = strlen(filepath) - 1;
-    if(filepath[end_idx] != '/') return;
-    filepath[end_idx] = '\0';
 }
